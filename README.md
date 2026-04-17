@@ -80,7 +80,7 @@ fastqc -t "$Threads" -o "$Output_dir" "$R1" "$R2"`
 
  
 # Copying fastqc_results on my computer
-[zongo@node02 ~]$ scp -r /scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/ /home/zongo/
+scp -r /scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/ /home/zongo/
 saidou@saidou-zongo:~/Documents$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/fastqc_results .
 
 
