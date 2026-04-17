@@ -35,8 +35,8 @@ Access link: https://mm.tt/map/3944152256?t=KJA8lJE8Ul
    # fastq.gz R1 & R2 data downloading on NCBI and EMBL-EBI using Isolate ID and Projects accesions
 wget https:"IsolateID_R1.fastq.gzaccesslink" https:"IsolateID_R2.fastq.gzaccesslink"
 
-   # Quality contrôle
-  #Creating a directory QC and subdirectories fastqc_results and multiqc_results
+` ## Quality contrôle
+Creating a directory QC and subdirectories fastqc_results and multiqc_results
 mkdir -p QC/fastqc_results QC/multiqc_results
 
 # Run fastqc on data
@@ -76,6 +76,11 @@ fi
 echo "Processing sample: $base"
 
 # Lancer FastQC directement dans Output_dir
-fastqc -t "$Threads" -o "$Output_dir" "$R1" "$R2"
+fastqc -t "$Threads" -o "$Output_dir" "$R1" "$R2"`
+
+ 
+# Copying fastqc_results on my computer
+[zongo@node02 ~]$ scp -r /scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/ /home/zongo/
+saidou@saidou-zongo:~/Documents$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/fastqc_results .
 
 
