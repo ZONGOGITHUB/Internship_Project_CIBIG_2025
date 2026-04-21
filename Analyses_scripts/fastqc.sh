@@ -5,12 +5,13 @@
 #SBATCH --array=0-76%4
 #SBATCH --output=QC/logs/fastqc_%A_%a.out
 #SBATCH --error=QC/logs/fastqc_%A_%a.err
+#SBATCH --nodelist=node02
 
+module load bioinfo-wave
 module load fastqc/0.12.1
 
 Input_dir="RAW_DATA"
 Output_dir="QC/fastqc_results"
-Threads=4
 
 mkdir -p "$Output_dir" QC/logs
 
@@ -31,5 +32,4 @@ fi
 echo "Processing sample: $base"
 
 # Lancer FastQC directement dans Output_dir
-fastqc -t "$Threads" -o "$Output_dir" "$R1" "$R2"
-
+fastqc -threads 4 -o "$Output_dir" "$R1" "$R2"
