@@ -22,32 +22,32 @@ Access link: https://mm.tt/map/3944152256?t=KJA8lJE8Ul
 
 
 
-# BIOINFORMTIC STRATEGY
+# I BIOINFORMTIC STRATEGY
 
-## Data acquisition
+## 1 Data acquisition
    
-## CONNECTING TO NCBI and EMBL-EBI
+## 1.1. CONNECTING TO NCBI and EMBL-EBI
 https://www.ncbi.nlm.nih.gov/
 https://www.ebi.ac.uk/ena/browser/home
 
-## Connecting to WAVE cluster and moving to my working directory
+## 1.2. Connecting to WAVE cluster and moving to my working directory
 ```bash
 ssh zongo@160.120.108.164
 srun -c 2 -p short --nodelist=node02 --pty bash -i
 cd /scratch/zongo/
 ```
 
-## Creating of my working directory and raw data sub-directory in /scratch/zongo
+## 1.3. Creating of my working directory and raw data sub-directory in /scratch/zongo
 ```bash
 mkdir -p CIBIG_2025_Internship_Project/RAW_DATA
 ```
 
-## Data downloading in RAW_DATA directory from NCBI and EMBL-EBI using Isolate ID and Projects accesions
+## 1.4. Data downloading in RAW_DATA directory from NCBI and EMBL-EBI using Isolate ID and Projects accesions
 ```bash
 wget https:"IsolateID_R1.fastq.gz accesslink" https:"IsolateID_R2.fastq.gz accesslink"
 ```
 
-## Files renaming with R1 and R2
+## 1.5. Files renaming with R1 and R2
 ```bash
 for f in *.fastq.gz; do
 new=$(echo "$f" | sed -E 's/_1\.fastq\.gz$/_R1.fastq.gz/; s/_2\.fastq\.gz$/_R2.fastq.gz/')
@@ -56,16 +56,15 @@ done
 ```
 
 
-#DATA ANALYSES
+# 2. DATA ANALYSES
 
-## Quality controle
-## Creating a directory QC and subdirectories fastqc_results and multiqc_results
+## 2.1. Quality control
+## 2.1.1. Creating a directory QC and subdirectories fastqc_results and multiqc_results
 ```bash
 mkdir -p QC/fastqc_results QC/multiqc_results
 ```
 
-### Fastqc
-
+### 2.1.2.Fastqc
 ```bash
 #!/bin/bash
 #SBATCH --job-name=fastqc
@@ -103,7 +102,7 @@ echo "Processing sample: $base"
 fastqc -t "$Threads" -o "$Output_dir" "$R1" "$R2"
 ```
 
-### Copying fastqc_results on my computer
+### 2.1.3. Copying fastqc_results on my computer
 ```bash
 scp -r /scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/ /home/zongo/
 ```
@@ -111,11 +110,9 @@ scp -r /scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/ /home/zongo/
 saidou@saidou-zongo:~/Documents$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/fastqc_results .
 ```
 
-### MultiQC
-
-### Installation de Multiqc 1.13 à l'aide de l'installeur Miniforge
-    
-    
+### 2.1.4. MultiQC
+### 2.1.5. Installation de Multiqc 1.13 à l'aide de l'installeur Miniforge
+      
 ```bash
 #!/bin/bash
 
@@ -144,8 +141,7 @@ conda activate multiqc_env
 conda install -c bioconda multiqc=1.13 -y
 ```
 
-### BATCH SCRIPT SLURM POUR MULTIQC
-
+### 2.1.6. BATCH SCRIPT SLURM POUR MULTIQC
 ```bash
 #!/bin/bash`
 #SBATCH --job-name=multiqc
