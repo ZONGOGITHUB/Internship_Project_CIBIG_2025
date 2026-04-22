@@ -8,7 +8,7 @@ Les recherches antérieures ont montré que _M. oryzae_ est subdivisé en plusie
 Cette étude vise à approfondir la compréhension de la structure génétique de plusieurs isolats de _Magnaporthe_ (voir tableau), issus de différentes espèces hôtes, pour déterminer s'ils forment des lignées hôtes-spécifiques et évaluer l'existence d'espèces cryptiques au sein de _M. oryzae_. 
 En bref:
 
-On cherche à comprendre la structure des populations de _M. oryzae_.
+On cherche à comprendre la structure des populations de _M. oryzae_
     • Quel est le lien entre l'hôte et la structuration de la population?
     • Y a t-il des espèces cryptiques qui se détachent du reste de la population  de _M. oryzae_ ou bien _M. oryzae_ n’est constitué que d’une seule espèce, indépendamment de son hôte?
     
