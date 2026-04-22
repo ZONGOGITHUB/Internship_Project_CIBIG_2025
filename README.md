@@ -9,9 +9,11 @@ Cette étude vise à approfondir la compréhension de la structure génétique d
 En bref:
 
 On cherche à comprendre la structure des populations de _M. oryzae_
-# 1 Quel est le lien entre l'hôte et la structuration de la population?
-# 2 Y a t-il des espèces cryptiques qui se détachent du reste de la population  de _M. oryzae_ ou bien _M. oryzae_ n’est constitué que d’une seule espèce, indépendamment de son hôte?
+1 Quel est le lien entre l'hôte et la structuration de la population?
+2 Y a t-il des espèces cryptiques qui se détachent du reste de la population  de _M. oryzae_ ou bien _M. oryzae_ n’est constitué que d’une seule espèce, indépendamment de son hôte?
     
+
+# Supervisors
     
 # Institutional supervisor: Prof Fidèle TIENDREBEOGO (WAVE)
 
