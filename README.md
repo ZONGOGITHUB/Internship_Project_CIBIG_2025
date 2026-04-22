@@ -17,37 +17,36 @@ On cherche à comprendre la structure des populations de _M. oryzae_.
 
 # Academic supervisors: Sébastien RAVEL (CIRAD) and Christine Tranchant-Dubreuil (IRD)
 
-# Project Mind Map: 
+
+# I. BIOINFORMTIC STRATEGY
+# 1. Project Mind Map: 
 Access link: https://mm.tt/map/3944152256?t=KJA8lJE8Ul
 
 
-
-# I BIOINFORMTIC STRATEGY
-
-## 1 Data acquisition
+## 2. SEQUENCING DATA ACQUISITION
    
-## 1.1. CONNECTING TO NCBI and EMBL-EBI
+## 2.1. Connecting TO NCBI and EMBL-EBI
 https://www.ncbi.nlm.nih.gov/
 https://www.ebi.ac.uk/ena/browser/home
 
-## 1.2. Connecting to WAVE cluster and moving to my working directory
+## 2.2. Connecting to WAVE cluster and moving to my working directory
 ```bash
 ssh zongo@160.120.108.164
 srun -c 2 -p short --nodelist=node02 --pty bash -i
 cd /scratch/zongo/
 ```
 
-## 1.3. Creating of my working directory and raw data sub-directory in /scratch/zongo
+## 2.3. Creating of my working directory and raw data sub-directory in /scratch/zongo
 ```bash
 mkdir -p CIBIG_2025_Internship_Project/RAW_DATA
 ```
 
-## 1.4. Data downloading in RAW_DATA directory from NCBI and EMBL-EBI using Isolate ID and Projects accesions
+## 2.4. Data downloading in RAW_DATA directory from NCBI and EMBL-EBI using Isolate ID and Projects accesions
 ```bash
 wget https:"IsolateID_R1.fastq.gz accesslink" https:"IsolateID_R2.fastq.gz accesslink"
 ```
 
-## 1.5. Files renaming with R1 and R2
+## 2.5. Files renaming with R1 and R2
 ```bash
 for f in *.fastq.gz; do
 new=$(echo "$f" | sed -E 's/_1\.fastq\.gz$/_R1.fastq.gz/; s/_2\.fastq\.gz$/_R2.fastq.gz/')
@@ -56,15 +55,15 @@ done
 ```
 
 
-# 2. DATA ANALYSES
+# 3. DATA ANALYSES
 
-## 2.1. Quality control
-## 2.1.1. Creating a directory QC and subdirectories fastqc_results and multiqc_results
+## 3.1. Quality control
+## 3.1.1. Creating a directory QC and subdirectories fastqc_results and multiqc_results
 ```bash
 mkdir -p QC/fastqc_results QC/multiqc_results
 ```
 
-### 2.1.2.Fastqc
+### 3.1.2.Fastqc
 ```bash
 #!/bin/bash
 #SBATCH --job-name=fastqc
@@ -102,7 +101,7 @@ echo "Processing sample: $base"
 fastqc -t "$Threads" -o "$Output_dir" "$R1" "$R2"
 ```
 
-### 2.1.3. Copying fastqc_results on my computer
+### 3.1.3. Copying fastqc_results on my computer
 ```bash
 scp -r /scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/ /home/zongo/
 ```
@@ -110,8 +109,8 @@ scp -r /scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/ /home/zongo/
 saidou@saidou-zongo:~/Documents$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/fastqc_results .
 ```
 
-### 2.1.4. MultiQC
-### 2.1.5. Installation de Multiqc 1.13 à l'aide de l'installeur Miniforge
+### 3.1.4. MultiQC
+### 3.1.5. Installation de Multiqc 1.13 à l'aide de l'installeur Miniforge
       
 ```bash
 #!/bin/bash
@@ -170,6 +169,140 @@ mkdir -p "$Multiqc_out" QC/logs
 
 multiqc "$Fastqc_dir" -o "$Multiqc_out"
 ```
+
+### 3.2. TRIMMING
+```bash
+#!/bin/bash
+#SBATCH --job-name=trimmomatic
+#SBATCH -p normal
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/trimmomatic_%j.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/trimmomatic_%j.err
+#SBATCH --nodelist=node02
+#SBATCH --array=0-76%4       
+#SBATCH -c 4
+
+# Chargement des modules
+module load bioinfo-wave
+module load trimmomatic/0.39
+
+# Définition de chemins absolus
+INPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/RAW_DATA"
+OUTPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Trimmomatic_results"
+
+# Définition des listes des fichiers R1 et R2 
+R1_FILES=("$INPUT_DIR"/*_R1.fastq.gz)
+R2_FILES=("$INPUT_DIR"/*_R2.fastq.gz)
+
+# Identification de l'échantillon correspondant à l'index SLURM
+
+INDEX=$SLURM_ARRAY_TASK_ID
+R1=${R1_FILES[$INDEX]}
+R2=${R2_FILES[$INDEX]}
+
+if [[ ! -f "$R1" ]] || [[ ! -f "$R2" ]]; then
+    echo "Skipping index $INDEX: files missing"
+    exit 1
+fi
+
+SAMPLE=$(basename "$R1" _R1.fastq.gz)
+
+echo "Processing $SAMPLE ..."
+
+# Trimmomatic PE 
+trimmomatic PE -threads 4 -phred33 \
+    "$R1" "$R2" \
+    "$OUTPUT_DIR/${SAMPLE}_R1_paired.fastq.gz" "$OUTPUT_DIR/${SAMPLE}_R1_unpaired.fastq.gz" \
+    "$OUTPUT_DIR/${SAMPLE}_R2_paired.fastq.gz" "$OUTPUT_DIR/${SAMPLE}_R2_unpaired.fastq.gz" \
+    SLIDINGWINDOW:4:30 \
+    LEADING:3 TRAILING:3 \
+    MINLEN:36
+
+echo "Finished $SAMPLE"
+```
+
+### 3.3. MAPPING 
+```bash
+#!/bin/bash
+#SBATCH --job-name=mapping
+#SBATCH --partition=normal
+#SBATCH --cpus-per-task=12
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/mapping_%j.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/mapping_%j.err
+#SBATCH --nodelist=node02
+
+set -euo pipefail
+
+# Définition des répertoires
+INPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Trimmomatic_results"
+OUTPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Mapping_results"
+REF_GENOME="/scratch/zongo/CIBIG_Internship_Project/GCF_000002495.2_MG8_genomic.fna"
+
+mkdir -p "$OUTPUT_DIR"
+
+# Chargement des modules
+module load bioinfo-wave
+module load bwamem2/2.3
+module load samtools/1.23.1
+
+# Indexation du génome de référence
+if [[ ! -f "${REF_GENOME}.bwt.2bit.64" ]]; then
+    echo "Index BWA inexistant, création en cours..."
+    bwa-mem2 index "$REF_GENOME"
+    echo "Index créé."
+else
+    echo "Index BWA trouvé, utilisation de l'existant."
+fi
+
+# Boucle sur les séquences
+for R1 in "$INPUT_DIR"/*_R1_paired.fastq.gz; do
+
+    # Déduction du nom du sample à partir du fichier R1
+    sample=$(basename "$R1" _R1_paired.fastq.gz)
+    # Construction du chemin du fichier R2 correspondant
+    R2="$INPUT_DIR/${sample}_R2_paired.fastq.gz"
+
+    # Définition des chemins de sortie
+    BAM_FILE="$OUTPUT_DIR/${sample}.bam"
+    STATS_FILE="$OUTPUT_DIR/${sample}_stats.txt"
+    FILTERED_FILE="$OUTPUT_DIR/${sample}_filtered.bam"
+    SORTED_FILE="$OUTPUT_DIR/${sample}_sorted.bam"
+
+    # Mapping
+    bwa-mem2 mem -t 12 "$REF_GENOME" "$R1" "$R2" | samtools view -@ 12 -Sb - > "$BAM_FILE"
+
+    # Statistiques sur les BAM
+    samtools flagstat "$BAM_FILE" > "$STATS_FILE"
+
+    # Filtrage des BAM
+    samtools view -b -q 30 "$BAM_FILE" > "$FILTERED_FILE"
+    rm -f "$BAM_FILE"
+
+    # Tri des filtered.bam avec MAPQ >= 30
+    samtools sort -o "$SORTED_FILE" "$FILTERED_FILE"
+    rm -f "$FILTERED_FILE"
+
+    # Indexation des sorted.bam
+    samtools index "$SORTED_FILE"
+
+    echo "✅ Terminé pour $sample"
+done
+```
+### 3.4. Copying Mapping_results on my computer
+```bash
+[zongo@node02 ~]$ scp -r /scratch/zongo/CIBIG_Internship_Project/Mapping_results/ /home/zongo/
+saidou@saidou-zongo:~/Documents$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/Mapping_results .
+```
+# II. GIT CONFIGURATION FOR MY INTERNSHIP PROJECT
+```bash
+1- Creationg of repersitory "Internship_Project_CIBIG_2025"
+2- Cloning of this repersitory on my Computer
+3- Copying folders and files inside
+4- git add .
+5- git commit -m 'update somes files'
+6- git push origin main
+```
+
+
 
 
 
