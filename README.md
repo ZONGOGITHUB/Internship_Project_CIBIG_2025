@@ -31,11 +31,9 @@ https://www.ncbi.nlm.nih.gov/
 https://www.ebi.ac.uk/ena/browser/home
 
 ## Connecting to WAVE cluster and moving to my working directory
+```bash
 ssh zongo@160.120.108.164
-```bash
 srun -c 2 -p short --nodelist=node02 --pty bash -i
-```
-```bash
 cd /scratch/zongo/
 ```
 
