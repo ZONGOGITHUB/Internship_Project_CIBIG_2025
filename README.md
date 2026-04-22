@@ -140,7 +140,7 @@ conda activate multiqc_env
 conda install -c bioconda multiqc=1.13 -y
 ```
 
-### 2.1.6. BATCH SCRIPT SLURM POUR MULTIQC
+### 2.1.6. BATCH SCRIPT POUR MULTIQC
 ```bash
 #!/bin/bash`
 #SBATCH --job-name=multiqc
