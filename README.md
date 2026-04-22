@@ -18,7 +18,7 @@ On cherche à comprendre la structure des populations de _M. oryzae_
 # Academic supervisors: Sébastien RAVEL (CIRAD) and Christine Tranchant-Dubreuil (IRD)
 
 
-# I. BIOINFORMTIC STRATEGY
+# I. BIOINFORMATIC STRATEGY
 # 1. Project Mind Map: 
 Access link: https://mm.tt/map/3944152256?t=KJA8lJE8Ul
 
