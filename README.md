@@ -32,8 +32,12 @@ https://www.ebi.ac.uk/ena/browser/home
 
 ## Connecting to WAVE cluster and moving to my working directory
 ssh zongo@160.120.108.164
-```bash|srun -c 2 -p short --nodelist=node02 --pty bash -i```
-```bash|cd /scratch/zongo/```
+```bash
+srun -c 2 -p short --nodelist=node02 --pty bash -i
+```
+```bash
+cd /scratch/zongo/
+```
 
 ## Creating of my working directory and raw data sub-directory in /scratch/zongo
 ```mkdir -p CIBIG_2025_Internship_Project/RAW_DATA```
