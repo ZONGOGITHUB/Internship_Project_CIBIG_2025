@@ -13,7 +13,8 @@ On cherche à comprendre la structure des populations de _M. oryzae_
 2) Y a t-il des espèces cryptiques qui se détachent du reste de la population  de _M. oryzae_ ou bien _M. oryzae_ n’est constitué que d’une seule espèce, indépendamment de son hôte?
     
 
-# Supervisors
+
+# SUPERVISORS
     
 # Institutional supervisor: Prof Fidèle TIENDREBEOGO (WAVE)
 
