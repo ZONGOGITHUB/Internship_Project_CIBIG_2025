@@ -1,6 +1,6 @@
 # Internship_Project_CIBIG_2025
 
-# TOPIC:  Genetic diversity study of _Magnaporthe oryzae_ population
+# TOPIC:  Genetic structure study of _Magnaporthe oryzae_ population
 
 ### Lignées spécifiques de _Magnaporthe oryzae_
 L’étude des structures génétiques des populations pathogènes, en lien avec des traits d'histoire de vie tels que le mode de reproduction, l'étendue des hôtes ou la résistance aux traitements, est essentielle pour comprendre l'émergence et la propagation des maladies infectieuses. Parmi les pathogènes des plantes, le champignon ascomycète _Magnaporthe oryzae_, responsable de la maladie du "blast" sur de nombreuses espèces de graminées cultivées et sauvages, constitue un modèle d'intérêt. Bien que ce pathogène soit principalement étudié pour ses effets dévastateurs sur le riz (_Oryza sativa_), il infecte également d'autres cultures céréalières, telles que le blé, l'orge et le millet, ainsi que des graminées comme le ray-grass et l'herbe de Saint-Augustin. 
