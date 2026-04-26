@@ -28,7 +28,7 @@ Access link: https://mm.tt/map/3944152256?t=KJA8lJE8Ul
 
 ## 2. SEQUENCING DATA ACQUISITION
    
-## 2.1. Connecting TO NCBI and EMBL-EBI
+## 2.1. Connecting to NCBI and EMBL-EBI
 https://www.ncbi.nlm.nih.gov/
 https://www.ebi.ac.uk/ena/browser/home
 
