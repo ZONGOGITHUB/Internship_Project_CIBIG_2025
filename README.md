@@ -223,7 +223,60 @@ trimmomatic PE -threads 4 -phred33 \
 echo "Finished $SAMPLE"
 ```
 
-### 3.3. MAPPING 
+### 3.3. Fastqc on trimmed data
+```bash
+
+#!/bin/bash
+#SBATCH --job-name=fastqc_trim
+#SBATCH --exclude=node01,node03,node05,node06
+#SBATCH -p normal
+#SBATCH -c 4
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/fastqc_trim.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/fastqc_trim.err
+
+module load bioinfo-wave
+module load fastqc/0.12.1
+
+INPUT="/scratch/zongo/CIBIG_Internship_Project/Trimmomatic_results"
+OUTPUT="/scratch/zongo/CIBIG_Internship_Project/QC/fastqc_trim_results"
+
+mkdir -p "$OUTPUT"
+
+echo "FastQC en cours..."
+
+
+find "$INPUT" -name "*_R1_paired.fastq.gz" | xargs -n 1 -P 2 bash -c '
+R1="$1"
+R2="${R1/_R1_/_R2_}"
+[[ -f "$R2" ]] || exit
+fastqc -threads 4 -o "'"$OUTPUT"'" "$R1" "$R2"
+' _
+```
+
+### 3.4. Multiqc on trimmed data
+```bash
+#!/bin/bash
+#SBATCH --job-name=multiqc_trim
+#SBATCH --partition=normal
+#SBATCH --nodelist=node02
+#SBATCH -c 2
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/multiqc_trim_%j.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/multiqc_trim_%j.err
+
+set -euo pipefail
+
+source ~/miniforge3/bin/activate
+conda activate multiqc_env
+
+Fastqc_dir="/scratch/zongo/CIBIG_Internship_Project/QC/fastqc_trim_results/"
+Multiqc_out="/scratch/zongo/CIBIG_Internship_Project/QC/multiqc_trim_results"
+
+mkdir -p "$Multiqc_out"
+
+multiqc "$Fastqc_dir" -o "$Multiqc_out"
+```
+
+### 3.5. MAPPING 
 ```bash
 #!/bin/bash
 #SBATCH --job-name=mapping
@@ -290,6 +343,7 @@ for R1 in "$INPUT_DIR"/*_R1_paired.fastq.gz; do
     echo "✅ Terminé pour $sample"
 done
 ```
+
 ### 3.4. Copying Mapping_results on my computer
 ```bash
 [zongo@node02 ~]$ scp -r /scratch/zongo/CIBIG_Internship_Project/Mapping_results/ /home/zongo/
