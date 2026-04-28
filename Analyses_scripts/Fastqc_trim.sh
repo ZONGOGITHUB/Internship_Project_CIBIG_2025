@@ -1,7 +1,4 @@
-
 #!/bin/bash
-
-# Slurm configuration
 #SBATCH --job-name=fastqc_trim
 #SBATCH --exclude=node01,node03,node05,node06
 #SBATCH -p normal
@@ -9,11 +6,8 @@
 #SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/fastqc_trim.out
 #SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/fastqc_trim.err
 
-# Modules loading
 module load bioinfo-wave
 module load fastqc/0.12.1
-
-#Directories
 
 INPUT="/scratch/zongo/CIBIG_Internship_Project/Trimmomatic_results"
 OUTPUT="/scratch/zongo/CIBIG_Internship_Project/QC/fastqc_trim_results"

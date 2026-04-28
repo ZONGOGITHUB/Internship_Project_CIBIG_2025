@@ -1,6 +1,4 @@
 #!/bin/bash
-
-# Slurm configuration
 #SBATCH --job-name=multiqc_trim
 #SBATCH --partition=normal
 #SBATCH --nodelist=node02
@@ -10,15 +8,12 @@
 
 set -euo pipefail
 
-# Miniforge and multiqc activation
 source ~/miniforge3/bin/activate
 conda activate multiqc_env
 
-# Directories
 Fastqc_dir="/scratch/zongo/CIBIG_Internship_Project/QC/fastqc_trim_results/"
 Multiqc_out="/scratch/zongo/CIBIG_Internship_Project/QC/multiqc_trim_results"
 
 mkdir -p "$Multiqc_out"
 
-# Multiqc running
 multiqc "$Fastqc_dir" -o "$Multiqc_out"
