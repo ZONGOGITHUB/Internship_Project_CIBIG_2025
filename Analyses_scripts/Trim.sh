@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# Slurm configuration
 #SBATCH --job-name=trimmomatic
 #SBATCH -p normal
 #SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/trimmomatic_%j.out
@@ -7,19 +9,19 @@
 #SBATCH --array=0-76%4       
 #SBATCH -c 4
 
-# Chargement des modules
+# Modules loading
 module load bioinfo-wave
 module load trimmomatic/0.39
 
-# Définition de chemins absolus
+# Directories
 INPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/RAW_DATA"
 OUTPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Trimmomatic_results"
 
-# Définition des listes des fichiers R1 et R2 
+#  R1 et R2 files listes
 R1_FILES=("$INPUT_DIR"/*_R1.fastq.gz)
 R2_FILES=("$INPUT_DIR"/*_R2.fastq.gz)
 
-# Identification de l'échantillon correspondant à l'index SLURM
+# Samples index SLURM
 
 INDEX=$SLURM_ARRAY_TASK_ID
 R1=${R1_FILES[$INDEX]}
