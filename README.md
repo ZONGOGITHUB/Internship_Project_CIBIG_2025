@@ -69,6 +69,7 @@ mkdir -p QC/fastqc_results QC/multiqc_results
 ### 3.1.2.Fastqc
 ```bash
 #!/bin/bash
+
 # Slurm configuration
 #SBATCH --job-name=fastqc
 #SBATCH -p normal
@@ -76,10 +77,12 @@ mkdir -p QC/fastqc_results QC/multiqc_results
 #SBATCH --array=0-76%4
 #SBATCH --output=QC/logs/fastqc_%A_%a.out
 #SBATCH --error=QC/logs/fastqc_%A_%a.err
+
 # Module loading
 module load bioinfo-wave
 module load fastqc/0.12.1
 
+# Directories
 Input_dir="RAW_DATA"
 Output_dir="QC/fastqc_results"
 Threads=4
@@ -148,6 +151,7 @@ conda install -c bioconda multiqc=1.13 -y
 ### 2.1.6. Multiqc script
 ```bash
 #!/bin/bash`
+
 # Slurm configuration
 #SBATCH --job-name=multiqc
 #SBATCH --partition=normal
@@ -179,6 +183,7 @@ multiqc "$Fastqc_dir" -o "$Multiqc_out"
 ### 3.2. TRIMMING
 ```bash
 #!/bin/bash
+
 # Slurm configuration
 #SBATCH --job-name=trimmomatic
 #SBATCH -p normal
@@ -231,6 +236,7 @@ echo "Finished $SAMPLE"
 ```bash
 
 #!/bin/bash
+
 # Slurm configuration
 #SBATCH --job-name=fastqc_trim
 #SBATCH --exclude=node01,node03,node05,node06
@@ -264,6 +270,7 @@ fastqc -threads 4 -o "'"$OUTPUT"'" "$R1" "$R2"
 ### 3.4. Multiqc on trimmed data
 ```bash
 #!/bin/bash
+
 # Slurm configuration
 #SBATCH --job-name=multiqc_trim
 #SBATCH --partition=normal
@@ -290,6 +297,7 @@ multiqc "$Fastqc_dir" -o "$Multiqc_out"
 ### 3.5. MAPPING 
 ```bash
 #!/bin/bash
+
 # Slurm configuration
 #SBATCH --job-name=mapping
 #SBATCH --partition=normal
