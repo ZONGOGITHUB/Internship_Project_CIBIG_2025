@@ -34,14 +34,14 @@ https://www.ebi.ac.uk/ena/browser/home
 
 ## 2.2. Connecting to WAVE cluster and moving to my working directory
 ```bash
-ssh zongo@160.120.108.164
+ssh login@160.120.108.164
 srun -c 2 -p short --nodelist=node02 --pty bash -i
-cd /scratch/zongo/
+cd /scratch/username/
 ```
 
 ## 2.3. Creating of my working directory and raw data sub-directory in /scratch/zongo
 ```bash
-mkdir -p CIBIG_2025_Internship_Project/RAW_DATA
+mkdir -p CIBIG_2025_Internship_Project/Data
 ```
 
 ## 2.4. Data downloading in RAW_DATA directory from NCBI and EMBL-EBI using Isolate ID and Projects accesions
@@ -52,8 +52,8 @@ wget https:"IsolateID_R1.fastq.gz accesslink" https:"IsolateID_R2.fastq.gz acces
 ## 2.5. Files renaming with R1 and R2
 ```bash
 for f in *.fastq.gz; do
-new=$(echo "$f" | sed -E 's/_1\.fastq\.gz$/_R1.fastq.gz/; s/_2\.fastq\.gz$/_R2.fastq.gz/')
-    [ "$f" != "$new" ] && echo mv "$f" "$new"
+    new=$(echo "$f" | sed -E 's/_1\.fastq\.gz$/_R1.fastq.gz/; s/_2\.fastq\.gz$/_R2.fastq.gz/')
+    [ "$f" != "$new" ] && mv -i "$f" "$new"
 done
 ```
 
