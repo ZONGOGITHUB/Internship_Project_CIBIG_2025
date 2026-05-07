@@ -53,7 +53,11 @@ wget https:"IsolateID_R1.fastq.gz accesslink" https:"IsolateID_R2.fastq.gz acces
 ```bash
 for f in *.fastq.gz; do
     new=$(echo "$f" | sed -E 's/_1\.fastq\.gz$/_R1.fastq.gz/; s/_2\.fastq\.gz$/_R2.fastq.gz/')
-    [ "$f" != "$new" ] && mv -i "$f" "$new"
+
+    if [ "$f" != "$new" ]; then
+        mv -i "$f" "$new"
+        echo "$f -> $new"
+    fi
 done
 ```
 
@@ -61,60 +65,57 @@ done
 # 3. DATA ANALYSES
 
 ## 3.1. Quality control
-## 3.1.1. Creating a directory QC and subdirectories fastqc_results and multiqc_results
+## 3.1.1. Creating a directory QC and subdirectories fastqc and multiqc
 ```bash
-mkdir -p QC/fastqc_results QC/multiqc_results
+mkdir -p Results/QC/fastqc Results/QC/multiqc
 ```
 
 ### 3.1.2.Fastqc
 ```bash
 #!/bin/bash
-
-# Slurm configuration
+#------Slurm configuration------
 #SBATCH --job-name=fastqc
 #SBATCH -p normal
-#SBATCH -c 4
-#SBATCH --array=0-76%4
-#SBATCH --output=QC/logs/fastqc_%A_%a.out
-#SBATCH --error=QC/logs/fastqc_%A_%a.err
+#SBATCH -c 8
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/logs/fastqc_%A_%a.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/logs/fastqc_%A_%a.err
+#SBATCH --nodelist=node02
 
-# Module loading
+# Modules loading
 module load bioinfo-wave
 module load fastqc/0.12.1
 
 # Directories
-Input_dir="RAW_DATA"
-Output_dir="QC/fastqc_results"
-Threads=4
+Input_dir="/scratch/zongo/CIBIG_Internship_Project/Data"
+Output_dir="/scratch/zongo/CIBIG_Internship_Project/Results/QC/fastqc"
 
-mkdir -p "$Output_dir" QC/logs
+mkdir -p "$Output_dir"
 
-# R1 files list
-samples=("$Input_dir"/*_R1.fastq.gz)
-sample="${samples[$SLURM_ARRAY_TASK_ID]}"
-base=$(basename "$sample" _R1.fastq.gz)
+# Loop on R1 files
+for R1 in "$Input_dir"/*_R1.fastq.gz; do
+    base=$(basename "$R1" _R1.fastq.gz)
+    R2="$Input_dir/${base}_R2.fastq.gz"
 
-R1="$Input_dir/${base}_R1.fastq.gz"
-R2="$Input_dir/${base}_R2.fastq.gz"
+    # R2 files checking
+    if [[ ! -f "$R2" ]]; then
+        echo "Missing pair for: $base"
+        continue
+    fi
 
-# R2 files checking
-if [[ ! -f "$R1" || ! -f "$R2" ]]; then
-   echo "Missing pair: $base"
-   exit 1
-fi
-
-echo "Processing sample: $base"
+    echo "Processing sample: $base"
 
 # Fastqc running
-fastqc -t "$Threads" -o "$Output_dir" "$R1" "$R2"
+
+    fastqc --threads 8 -o "$Output_dir" "$R1" "$R2"
+done
 ```
 
-### 3.1.3. Copying fastqc_results on my computer
+### 3.1.3. Copying fastqc results on my gitclone
 ```bash
-scp -r /scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/ /home/zongo/
+scp -r /scratch/zongo/CIBIG_Internship_Project/Results/QC/fastqc/ /home/zongo/
 ```
 ```bash
-saidou@saidou-zongo:~/Documents$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/fastqc_results .
+saidou@saidou-zongo:/media/saidou/ZONGO/GITCLONE_Project_CIBIG_2025/Results$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/fastqc .
 ```
 
 ### 3.1.4. MultiQC
@@ -148,226 +149,180 @@ conda activate multiqc_env
 conda install -c bioconda multiqc=1.13 -y
 ```
 
-### 2.1.6. Multiqc script
+### 3.1.6. Multiqc script
 ```bash
-#!/bin/bash`
-
-# Slurm configuration
+#!/bin/bash
+#----Slurm configuration----
 #SBATCH --job-name=multiqc
 #SBATCH --partition=normal
-#SBATCH --cpus-per-task=12
-#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/multiqc_%j.out
-#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/multiqc_%j.err
+#SBATCH --cpus-per-task=12 
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/logs/multiqc_%j.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/logs/multiqc_%j.err
 #SBATCH --nodelist=node02
-
 
 set -euo pipefail
 
-# Miniforge and MultiQC environment activation
-
+# Miniforge and MultiQC activating
 source ~/miniforge3/bin/activate
-conda activate multiqc_env           
+conda activate multiqc_env
 
 # Directories
+Fastqc_dir="/scratch/zongo/CIBIG_Internship_Project/Results/QC/fastqc"
+Multiqc_out="/scratch/zongo/CIBIG_Internship_Project/Results/QC/multiqc"
 
-Fastqc_dir="/scratch/zongo/CIBIG_Internship_Project/QC/fastqc_results/"
-Multiqc_out="/scratch/zongo/CIBIG_Internship_Project/QC/multiqc_results"
+mkdir -p "$Multiqc_out"
 
-mkdir -p "$Multiqc_out" QC/logs
-
-# Multiqc running
-
+# MultiQC running
 multiqc "$Fastqc_dir" -o "$Multiqc_out"
 ```
+
+### 3.1.7. Copying multiqc results on my gitclone
+```bash
+scp -r /scratch/zongo/CIBIG_Internship_Project/Results/QC/multiqc/ /home/zongo/
+```
+```bash
+saidou@saidou-zongo:/media/saidou/ZONGO/GITCLONE_Project_CIBIG_2025/Results$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/multiqc .
+```
+
 
 ### 3.2. TRIMMING
 ```bash
 #!/bin/bash
-
-# Slurm configuration
+#----Slurm configuration----
 #SBATCH --job-name=trimmomatic
 #SBATCH -p normal
-#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/trimmomatic_%j.out
-#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/trimmomatic_%j.err
+#SBATCH -c 12
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/logs/trimmomatic_%j.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/logs/trimmomatic_%j.err
 #SBATCH --nodelist=node02
-#SBATCH --array=0-76%4       
-#SBATCH -c 4
+
+set -euo pipefail
 
 # Modules loading
 module load bioinfo-wave
 module load trimmomatic/0.39
 
 # Directories
-INPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/RAW_DATA"
-OUTPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Trimmomatic_results"
+INPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Data"
+OUTPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Results/QC/Trimmomatic"
 
-#  R1 et R2 files listes
-R1_FILES=("$INPUT_DIR"/*_R1.fastq.gz)
-R2_FILES=("$INPUT_DIR"/*_R2.fastq.gz)
+mkdir -p "$OUTPUT_DIR"
 
-# Samples index SLURM
+# Loop on R1 files
+for R1 in "$INPUT_DIR"/*_R1.fastq.gz; do
+    SAMPLE=$(basename "$R1" _R1.fastq.gz)
+    R2="$INPUT_DIR/${SAMPLE}_R2.fastq.gz"
 
-INDEX=$SLURM_ARRAY_TASK_ID
-R1=${R1_FILES[$INDEX]}
-R2=${R2_FILES[$INDEX]}
+    if [[ ! -f "$R2" ]]; then
+        echo "Missing pair for: $SAMPLE"
+        continue
+    fi
 
-if [[ ! -f "$R1" ]] || [[ ! -f "$R2" ]]; then
-    echo "Skipping index $INDEX: files missing"
-    exit 1
-fi
-
-SAMPLE=$(basename "$R1" _R1.fastq.gz)
-
-echo "Processing $SAMPLE ..."
-
-# Trimmomatic PE 
-trimmomatic PE -threads 4 -phred33 \
-    "$R1" "$R2" \
-    "$OUTPUT_DIR/${SAMPLE}_R1_paired.fastq.gz" "$OUTPUT_DIR/${SAMPLE}_R1_unpaired.fastq.gz" \
-    "$OUTPUT_DIR/${SAMPLE}_R2_paired.fastq.gz" "$OUTPUT_DIR/${SAMPLE}_R2_unpaired.fastq.gz" \
-    SLIDINGWINDOW:4:30 \
-    LEADING:3 TRAILING:3 \
-    MINLEN:36
-
-echo "Finished $SAMPLE"
+    echo "Processing $SAMPLE ..."
+# Trimmomatic running
+    trimmomatic PE -phred33 -threads 12 \
+        "$R1" "$R2" \
+        "$OUTPUT_DIR/${SAMPLE}_R1_paired.fastq.gz" "$OUTPUT_DIR/${SAMPLE}_R1_unpaired.fastq.gz" \
+        "$OUTPUT_DIR/${SAMPLE}_R2_paired.fastq.gz" "$OUTPUT_DIR/${SAMPLE}_R2_unpaired.fastq.gz" \
+        SLIDINGWINDOW:4:20 MINLEN:50
+done
 ```
 
 ### 3.3. Fastqc on trimmed data
 ```bash
-
 #!/bin/bash
-
-# Slurm configuration
-#SBATCH --job-name=fastqc_trim
-#SBATCH --exclude=node01,node03,node05,node06
+#------Slurm configuration------
+#SBATCH --job-name=fastqc_trimmed
 #SBATCH -p normal
-#SBATCH -c 4
-#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/fastqc_trim.out
-#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/fastqc_trim.err
+#SBATCH -c 12
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/logs/fastqc_trimmed_%j.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/logs/fastqc_trimmed_%j.err
+#SBATCH --nodelist=node02
+
+set -euo pipefail
 
 # Modules loading
 module load bioinfo-wave
 module load fastqc/0.12.1
 
-#Directories
+# Directories
+Input_dir="/scratch/zongo/CIBIG_Internship_Project/Results/QC/Trimmomatic"
+Output_dir="/scratch/zongo/CIBIG_Internship_Project/Results/QC/fastqc_trimmed"
 
-INPUT="/scratch/zongo/CIBIG_Internship_Project/Trimmomatic_results"
-OUTPUT="/scratch/zongo/CIBIG_Internship_Project/QC/fastqc_trim_results"
+mkdir -p "$Output_dir"
 
-mkdir -p "$OUTPUT"
+# Loop on R1 files
+for R1 in "$Input_dir"/*_R1_paired.fastq.gz; do
+    base=$(basename "$R1" _R1_paired.fastq.gz)
+    R2="$Input_dir/${base}_R2_paired.fastq.gz"
 
-echo "FastQC en cours..."
+  # R2 files checking
+    if [[ ! -f "$R2" ]]; then
+        echo "Missing pair for: $base"
+        continue
+    fi
 
+    echo "Processing trimmed sample: $base"
 
-find "$INPUT" -name "*_R1_paired.fastq.gz" | xargs -n 1 -P 2 bash -c '
-R1="$1"
-R2="${R1/_R1_/_R2_}"
-[[ -f "$R2" ]] || exit
-fastqc -threads 4 -o "'"$OUTPUT"'" "$R1" "$R2"
-' _
+# Fastqc running
+    fastqc --threads 12 -o "$Output_dir" "$R1" "$R2"
+done
 ```
 
-### 3.4. Multiqc on trimmed data
+### 3.4. Copying fastqc_trimmed results on my gitclone
+```bash
+scp -r /scratch/zongo/CIBIG_Internship_Project/Results/QC/fastqc_trimmed/ /home/zongo/
+```
+```bash
+saidou@saidou-zongo:/media/saidou/ZONGO/GITCLONE_Project_CIBIG_2025/Results$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/fastqc_trimmed .
+```
+
+
+### 3.5. Multiqc on trimmed data
 ```bash
 #!/bin/bash
-
-# Slurm configuration
-#SBATCH --job-name=multiqc_trim
+#----Slurm configuration----
+#SBATCH --job-name=multiqc_trimmed
 #SBATCH --partition=normal
+#SBATCH --cpus-per-task=12
+#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/logs/multiqc_trimmed_%j.out
+#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/logs/multiqc_trimmed_%j.err
 #SBATCH --nodelist=node02
-#SBATCH -c 2
-#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/multiqc_trim_%j.out
-#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/multiqc_trim_%j.err
 
 set -euo pipefail
 
-# Miniforge and multiqc activation
+# Miniforge and MultiQC activating
 source ~/miniforge3/bin/activate
 conda activate multiqc_env
 
 # Directories
-Fastqc_dir="/scratch/zongo/CIBIG_Internship_Project/QC/fastqc_trim_results/"
-Multiqc_out="/scratch/zongo/CIBIG_Internship_Project/QC/multiqc_trim_results"
+Fastqc_dir="/scratch/zongo/CIBIG_Internship_Project/Results/QC/fastqc_trimmed"
+Multiqc_out="/scratch/zongo/CIBIG_Internship_Project/Results/QC/multiqc_trimmed"
 
 mkdir -p "$Multiqc_out"
-# Multiqc running
+
+# MultiQC running
 multiqc "$Fastqc_dir" -o "$Multiqc_out"
 ```
 
+### 3.4. Copying fastqc_trimmed results on my gitclone
+```bash
+scp -r /scratch/user/CIBIG_Internship_Project/Results/QC/multiqc_trimmed/ /home/user/
+```
+```bash
+saidou@saidou-zongo:/media/saidou/ZONGO/GITCLONE_Project_CIBIG_2025/Results$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/multiqc_trimmed .
+```
+
+
 ### 3.5. MAPPING 
 ```bash
-#!/bin/bash
 
-# Slurm configuration
-#SBATCH --job-name=mapping
-#SBATCH --partition=normal
-#SBATCH --cpus-per-task=12
-#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/QC/logs/mapping_%j.out
-#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/QC/logs/mapping_%j.err
-#SBATCH --nodelist=node02
-
-set -euo pipefail
-
-# Directories
-INPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Trimmomatic_results"
-OUTPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Mapping_results"
-REF_GENOME="/scratch/zongo/CIBIG_Internship_Project/GCF_000002495.2_MG8_genomic.fna"
-
-mkdir -p "$OUTPUT_DIR"
-
-# Modules loading
-module load bioinfo-wave
-module load bwamem2/2.3
-module load samtools/1.23.1
-
-# Ref genome indexing
-if [[ ! -f "${REF_GENOME}.bwt.2bit.64" ]]; then
-    echo "Index BWA inexistant, création en cours..."
-    bwa-mem2 index "$REF_GENOME"
-    echo "Index créé."
-else
-    echo "Index BWA trouvé, utilisation de l'existant."
-fi
-
-# Loop on the sequences
-for R1 in "$INPUT_DIR"/*_R1_paired.fastq.gz; do
-
-    # Samples name from R1
-    sample=$(basename "$R1" _R1_paired.fastq.gz)
-    # Construction du chemin du fichier R2 correspondant
-    R2="$INPUT_DIR/${sample}_R2_paired.fastq.gz"
-
-    # Output directories
-    BAM_FILE="$OUTPUT_DIR/${sample}.bam"
-    STATS_FILE="$OUTPUT_DIR/${sample}_stats.txt"
-    FILTERED_FILE="$OUTPUT_DIR/${sample}_filtered.bam"
-    SORTED_FILE="$OUTPUT_DIR/${sample}_sorted.bam"
-
-    # Mapping
-    bwa-mem2 mem -t 12 "$REF_GENOME" "$R1" "$R2" | samtools view -@ 12 -Sb - > "$BAM_FILE"
-
-    # Bam statistics
-    samtools flagstat "$BAM_FILE" > "$STATS_FILE"
-
-    # Bam filtering
-    samtools view -b -q 30 "$BAM_FILE" > "$FILTERED_FILE"
-    rm -f "$BAM_FILE"
-
-    # filtered.bam sorting with MAPQ >= 30
-    samtools sort -o "$SORTED_FILE" "$FILTERED_FILE"
-    rm -f "$FILTERED_FILE"
-
-    # Sorted.bam indexing
-    samtools index "$SORTED_FILE"
-
-    echo "✅ Terminé pour $sample"
-done
 ```
 
 ### 3.4. Copying Mapping_results on my computer
 ```bash
-[zongo@node02 ~]$ scp -r /scratch/zongo/CIBIG_Internship_Project/Mapping_results/ /home/zongo/
-saidou@saidou-zongo:~/Documents$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/Mapping_results .
+[zongo@node02 ~]$ scp -r /scratch/zongo/CIBIG_Internship_Project/Mapping/ /home/zongo/
+saidou@saidou-zongo:/media/saidou/ZONGO/GITCLONE_Project_CIBIG_2025/Results$ rsync -ravz --progress zongo@160.120.108.164:/home/zongo/Mapping .
 ```
 # II. GIT CONFIGURATION FOR MY INTERNSHIP PROJECT
 ```bash
