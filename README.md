@@ -396,7 +396,7 @@ module load bioinfo_wave
 module load samtools/1.23.1
 samtools faidx /scratch/zongo/CIBIG_Internship_Project/GCF_000002495.2_MG8_genomic.fna
 ```
-#### 3.5.2 SNP CALLING
+#### 3.5.2 Biallelic snps calling
 
 ```bash
 #!/bin/bash
@@ -451,6 +451,12 @@ bcftools stats "$SNP_VCF" > "$SNP_STATS_FILE"
 echo "Pipeline completed successfully."
 ```
 
+#### 3.5.3 Biallelic Snps filtering by QUAL and DP and statistics
+```bash
+bcftools view -i 'QUAL>=30' all_samples_snp.vcf.gz -Oz -o step1.vcf.gz
+bcftools view -i 'DP>=10' step1.vcf.gz -Oz -o step2.vcf.gz
+bcftools view -i 'DP<=500' step2.vcf.gz -Oz -o all_samples_snp_filtered.vcf.gz
+bcftools stats all_samples_snp_filtered.vcf.gz > all_samples_snps_filtered_stats.txt
 
 # II. GIT CONFIGURATION FOR MY INTERNSHIP PROJECT
 ```bash
