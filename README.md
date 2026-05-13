@@ -423,23 +423,23 @@ mkdir -p "$OUTPUT_DIR"
 
 # ===================== OUTPUT FILES =====================
 RAW_VCF="$OUTPUT_DIR/all_samples.raw.vcf.gz"
-SNP_VCF="$OUTPUT_DIR/all_samples_snp.vcf.gz"
-SNP_STATS_FILE="$OUTPUT_DIR/all_samples_snp_stats.txt"
+SNP_VCF="$OUTPUT_DIR/all_samples_rawsnp.vcf.gz"
+SNP_STATS_FILE="$OUTPUT_DIR/all_samples_rawsnp_stats.txt"
 
-# ===================== SNP CALLING =====================
+# ===================== RAW VCF GENERATING =====================
 bcftools mpileup --threads 12 -Ou -f "$REF" "$BAM_DIR"/*_sorted.bam | \
 bcftools call -mv -Oz -o "$RAW_VCF"
 
 bcftools index "$RAW_VCF"
 
-# ===================== RAW_VCF FILTERING TO RETAIN ONLY BIALLELIC SNP =====================
-echo "Filtering biallelic SNPs..."
+# ===================== RAW_SNP FILTERING =====================
+echo "Filtering RAW SNPs..."
 bcftools view \
-    -m2 -M2 \
-    -v snps \ 
+    -v snps \
     -Oz \
     -o "$SNP_VCF" \
     "$RAW_VCF"
+
 
 bcftools index "$SNP_VCF"
 
@@ -457,7 +457,39 @@ bcftools view -i 'QUAL>=30' all_samples_snp.vcf.gz -Oz -o step1.vcf.gz
 bcftools view -i 'DP>=10' step1.vcf.gz -Oz -o step2.vcf.gz
 bcftools view -i 'DP<=500' step2.vcf.gz -Oz -o all_samples_snp_filtered.vcf.gz
 bcftools stats all_samples_snp_filtered.vcf.gz > all_samples_snps_filtered_stats.txt
+```
+### 3.5.3 PLINK
+```bash
+plink --vcf all_samples_snp_filtered.vcf.gz \
+      --double-id \
+      --allow-extra-chr \
+      --make-bed \
+      --out mo_raw
 
+plink --bfile mo_raw \
+      --allow-extra-chr \
+      --geno 0.5 \
+      --mind 0.8 \
+      --maf 0.05 \
+      --indep-pairwise 50 5 0.2 \
+      --make-bed \
+      --out mo_work
+
+awk '{$1=$1}1' OFS=',' pca_results.eigenvec > pca.csv
+
+echo "FID,IID,PC1,PC2,PC3,PC4,PC5,PC6,PC7,PC8,PC9,PC10" > header.txt
+cat header.txt pca.csv > pca_final.csv
+pca <- read.csv("pca_final.csv")
+
+head(pca)
+install.packages("ggplot2")
+library(ggplot2)
+ggplot(pca, aes(x=PC1, y=PC2)) +
+  geom_point(size=3) +
+  theme_classic() +
+  labs(title="PCA of Magnaporthe oryzae isolates",
+       x="PC1",
+       y="PC2")
 # II. GIT CONFIGURATION FOR MY INTERNSHIP PROJECT
 ```bash
 1- Creationg of repersitory "Internship_Project_CIBIG_2025"
