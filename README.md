@@ -453,7 +453,46 @@ echo "Pipeline completed successfully."
 bcftools view --threads 8 -m2 -M2 -v snps all_samples_rawsnp.vcf.gz -Oz -o all_samples_biallelic_snps.vcf.gz
 bcftools stats all_samples_biallelic_snps.vcf.gz > all_samples_biallelic_snp_stats.txt
 ```
+### Renaming of all_samples_biallelic_snps.vcf.gz files to obtain names with only isolates ID
+```bash
+#!/bin/bash
 
+# Arrêter le script en cas d'erreur
+set -e
+
+# --- Chargement de l'environnement ---
+echo "=== Configuration des modules ==="
+module purge
+module load bioinfo-wave
+module load bcftools/1.18
+
+# --- Configuration des fichiers ---
+RAW_VCF="bisnps.vcf.gz"
+CLEAN_VCF="bisnps_clean_names.vcf.gz"
+
+echo "=== Début du renommage des isolats ==="
+
+# 1. Extraire les anciens noms complexes du VCF
+echo "-> Extraction des anciens noms..."
+bcftools query -l "$RAW_VCF" > old_names.txt
+
+# 2. Créer les nouveaux noms courts propres (sans chemin ni extension)
+echo "-> Génération des nouveaux noms courts..."
+sed 's|.*/||; s|_sorted.bam||' old_names.txt > new_names.txt
+
+# 3. Créer la table de correspondance pour bcftools
+paste old_names.txt new_names.txt > rename_table.txt
+
+# 4. Appliquer les nouveaux noms propres à l'en-tête du VCF
+echo "-> Application des modifications dans le fichier VCF..."
+bcftools reheader --samples rename_table.txt -o "$CLEAN_VCF" "$RAW_VCF"
+
+# 5. Supprimer les fichiers textes temporaires devenus inutiles
+rm old_names.txt new_names.txt rename_table.txt
+
+echo "=== Succès ! ==="
+
+```
 ### Biallelic snps parameters statistics checking
 
 ```bash
