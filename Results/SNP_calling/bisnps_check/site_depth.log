@@ -1,0 +1,18 @@
+
+VCFtools - 0.1.16
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+	--gzvcf bisnps_clean_names.vcf.gz
+	--out bisnps_check/site_depth
+	--site-mean-depth
+
+Using zlib version: 1.2.11
+Warning: Expected at least 2 parts in INFO entry: ID=SGB,Number=1,Type=Float,Description="Segregation based metric, http://samtools.github.io/bcftools/rd-SegBias.pdf">
+Warning: Expected at least 2 parts in INFO entry: ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes for each ALT allele, in the same order as listed">
+Warning: Expected at least 2 parts in INFO entry: ID=DP4,Number=4,Type=Integer,Description="Number of high-quality ref-forward , ref-reverse, alt-forward and alt-reverse bases">
+Warning: Expected at least 2 parts in INFO entry: ID=DP4,Number=4,Type=Integer,Description="Number of high-quality ref-forward , ref-reverse, alt-forward and alt-reverse bases">
+After filtering, kept 83 out of 83 Individuals
+Outputting Depth for Each Site
+After filtering, kept 1502842 out of a possible 1502842 Sites
+Run Time = 16.00 seconds
