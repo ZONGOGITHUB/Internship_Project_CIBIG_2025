@@ -454,122 +454,214 @@ bcftools view --threads 8 -m2 -M2 -v snps all_samples_rawsnp.vcf.gz -Oz -o all_s
 bcftools stats all_samples_biallelic_snps.vcf.gz > all_samples_biallelic_snp_stats.txt
 ```
 
-### Biallelic snps quality checking
+### Biallelic snps parameters statistics checking
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=QC_before_filtering
-#SBATCH --output=/scratch/zongo/CIBIG_Internship_Project/logs/qcbf_%j.out
-#SBATCH --error=/scratch/zongo/CIBIG_Internship_Project/logs/qcbf_%j.err
-#SBATCH --partition=normal
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=4G
-#SBATCH --time=01:00:00
 
-set -euo pipefail
 
-########################################
-# PATHS DIRECTS
-########################################
+set -e
 
-VCF="/scratch/zongo/CIBIG_Internship_Project/Results/SPNcalling/bisnps.vcf.gz"
-
-OUT="/scratch/zongo/CIBIG_Internship_Project/QC_before"
-
-mkdir -p $OUT
-
-########################################
-# MODULES
-########################################
+# --- Modules loading ---
+echo "=== Configuring Cluster Modules ==="
 module purge
 module load bioinfo-wave
-module load bcftools/1.18
 module load vcftools/0.1.16
 
-########################################
-# 1. QUAL
-########################################
+# --- Variables ---
+INPUT_VCF="bisnps_clean_names.vcf.gz"
+OUTPUT_DIR="bisnps_check"
 
-echo "STEP 1 - QUAL"
+mkdir -p "$OUTPUT_DIR"
 
-bcftools query -f '%QUAL\n' $VCF > $OUT/qual.txt
-########################################
-# 2. DEPTH GLOBAL (INFO/DP)
-########################################
+echo "=== Starting Quality Control Calculations ==="
 
-echo "STEP 2 - INFO/DP"
+# 1. Calculate allele frequency
+echo "-> Calculating allele frequencies..."
+vcftools --gzvcf "$INPUT_VCF" --freq2 --out "$OUTPUT_DIR/allele_freq"
 
-bcftools query -f '%INFO/DP\n' $VCF > $OUT/dp.txt
+# 2. Calculate site quality
+echo "-> Calculating site quality scores..."
+vcftools --gzvcf "$INPUT_VCF" --site-quality --out "$OUTPUT_DIR/qual_site"
 
-########################################
-# 3. MISSING PER SNP
-########################################
+# 3. Calculate mean depth per site
+echo "-> Calculating mean depth per site..."
+vcftools --gzvcf "$INPUT_VCF" --site-mean-depth --out "$OUTPUT_DIR/site_depth"
 
-echo "STEP 3 - Missing per SNP"
+# 4. Calculate mean depth per individual
+echo "-> Calculating depth per individual..."
+vcftools --gzvcf "$INPUT_VCF" --depth --out "$OUTPUT_DIR/indiv_depth"
+# 5. Calculate proportion of missing data per site
+echo "-> Calculating missing data per site..."
+vcftools --gzvcf "$INPUT_VCF" --missing-site --out "$OUTPUT_DIR/miss_site"
 
-vcftools --gzvcf $VCF \
-         --missing-site \
-         --out $OUT/site_missing
+# 6. Calculate proportion of missing data per individual
+echo "-> Calculating missing data per individual..."
+vcftools --gzvcf "$INPUT_VCF" --missing-indv --out "$OUTPUT_DIR/miss_indv"
 
-########################################
-# 4. MISSING PER INDIVIDUAL
-########################################
+# 7. Calculate heterozygosity and inbreeding coefficient per individual
+echo "-> Calculating heterozygosity and inbreeding per individual..."
+vcftools --gzvcf "$INPUT_VCF" --het --out "$OUTPUT_DIR/het_indb_individu"
 
-echo "STEP 4 - Missing per individual"
-
-vcftools --gzvcf $VCF \
-         --missing-indv \
-         --out $OUT/ind_missing
-
-########################################
-# 5. MAF
-########################################
-
-echo "STEP 5 - MAF"
-vcftools --gzvcf $VCF \
-         --freq \
-         --out $OUT/maf
-
-########################################
-# 6. MEAN DEPTH PER INDIVIDUAL
-########################################
-
-echo "STEP 6 - Mean depth per individual"
-
-vcftools --gzvcf $VCF \
-         --depth \
-         --out $OUT/mean_depth_individual
-
-########################################
-# 7. MEAN DEPTH PER SITE
-########################################
-
-echo "STEP 7 - Mean depth per site"
-
-vcftools --gzvcf $VCF \
-         --site-mean-depth \
-         --out $OUT/site_depth
-
-########################################
-# 8. TOTAL SNP COUNT
-########################################
-
-echo "STEP 8 - SNP count"
-bcftools view -H $VCF | wc -l > $OUT/total_snps.txt
-
-########################################
-# FIN
-########################################
-
-echo "QC FINISHED SUCCESSFULLY"
+echo "=== Calculations Completed! ==="
+echo "All statistics files are saved in: $OUTPUT_DIR"
 ```
+### Biallelic snps parameters plotting in R
+```bash
+# ==============================================================================
+# 1. AUTOMATIC PACKAGE INSTALLATION AND LIBRARY LOADING
+# ==============================================================================
+required_packages <- c("tidyverse", "gridExtra")
 
+# Installation automatique des packages manquants si internet est disponible
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages, repos = "https://r-project.org")
+
+# Chargement des librairies
+library(tidyverse)
+library(gridExtra)
+
+# Définition du dossier contenant vos outputs VCFTools
+data_dir <- "bisnps_check"
+
+print("=== Starting VCF QC Density Visualization ===")
+
+# Initialisation des variables à NULL pour empêcher les plantages
+p1 <- p2 <- p3 <- p4 <- p5 <- NULL
+
+# Configuration des paramètres esthétiques communs (Style exact de votre image)
+fill_color  <- "#bcdffc"
+line_color  <- "black"
+line_weight <- 1.2
+
+# ==============================================================================
+# 2. SITE QUALITY PLOT (QUAL) - PLOT 1/5
+# ==============================================================================
+qual_file <- file.path(data_dir, "qual_site.lqual")
+if(file.exists(qual_file)) {
+  qual_data <- read_table(qual_file, col_types = cols())
+  
+  p1 <- ggplot(qual_data, aes(x = QUAL)) +
+    geom_density(fill = fill_color, color = line_color, linewidth = line_weight, alpha = 0.9) +
+    geom_vline(xintercept = 30, color = "red", linetype = "dashed", linewidth = 1) +
+    theme_bw() +
+    theme(
+      plot.title = element_text(size = 14, face = "plain", hjust = 0.5),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10)
+    ) +
+    labs(title = "Site Quality Distribution", x = "Quality Score (QUAL)", y = "density")
+}
+
+# ==============================================================================
+# 3. MISSING DATA PER SITE PLOT (F_MISS) - PLOT 2/5
+# ==============================================================================
+miss_site_file <- file.path(data_dir, "miss_site.lmiss")
+if(file.exists(miss_site_file)) {
+  ms_data <- read_table(miss_site_file, col_types = cols())
+  
+  p2 <- ggplot(ms_data, aes(x = F_MISS)) +
+    geom_density(fill = fill_color, color = line_color, linewidth = line_weight, alpha = 0.9) +
+    theme_bw() +
+    theme(
+      plot.title = element_text(size = 14, face = "plain", hjust = 0.5),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10)
+    ) +
+    labs(title = "Missing Data per Site", x = "Fraction of Missing Data (F_MISS)", y = "density")
+}
+
+# ==============================================================================
+# 4. MISSING DATA PER INDIVIDUAL PLOT (F_MISS) - PLOT 3/5
+# ==============================================================================
+miss_ind_file <- file.path(data_dir, "miss_indv.imiss")
+if(file.exists(miss_ind_file)) {
+  mi_data <- read_table(miss_ind_file, col_types = cols())
+  
+  p3 <- ggplot(mi_data, aes(x = F_MISS)) +
+    geom_density(fill = fill_color, color = line_color, linewidth = line_weight, alpha = 0.9) +
+    geom_vline(xintercept = 0.15, color = "red", linetype = "dashed", linewidth = 1) + 
+    theme_bw() +
+    theme(
+      plot.title = element_text(size = 14, face = "plain", hjust = 0.5),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10)
+    ) + 
+    labs(title = "Missing Data per Individual", x = "Fraction of Missing Data (F_MISS)", y = "density")
+}
+
+# ==============================================================================
+# 5. HETEROZYGOSITY & INBREEDING PLOT (F) - PLOT 4/5
+# ==============================================================================
+het_file <- file.path(data_dir, "het_indb_individu.het")
+if(file.exists(het_file)) {
+  het_data <- read_table(het_file, col_types = cols())
+  
+  p4 <- ggplot(het_data, aes(x = F)) +
+    geom_density(fill = fill_color, color = line_color, linewidth = line_weight, alpha = 0.9) +
+    geom_vline(xintercept = 0, color = "black", linetype = "solid") +
+    theme_bw() +
+    theme(
+      plot.title = element_text(size = 14, face = "plain", hjust = 0.5),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10)
+    ) +
+    labs(title = "Inbreeding Coefficient (F)", x = "Inbreeding Coefficient (F)", y = "density")
+}
+
+# ==============================================================================
+# 6. ALLELE FREQUENCY PLOT (MAF) - PLOT 5/5
+# ==============================================================================
+freq_file <- file.path(data_dir, "allele_freq.frq")
+if(file.exists(freq_file)) {
+  freq_data <- read_table(freq_file, skip = 1, col_names = FALSE, col_types = cols())
+  
+  maf_values <- pmin(as.numeric(freq_data$X5), as.numeric(freq_data$X6), na.rm = TRUE)
+  maf_df <- data.frame(maf = maf_values)
+  
+  p5 <- ggplot(maf_df, aes(x = maf)) +
+    geom_density(fill = fill_color, color = line_color, linewidth = line_weight, alpha = 0.9) +
+    geom_vline(xintercept = 0.05, color = "red", linetype = "dashed", linewidth = 1) + 
+    theme_bw() +
+    theme(
+      plot.title = element_text(size = 14, face = "plain", hjust = 0.5),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10)
+    ) +
+    labs(title = "Minor Allele Frequency Distribution", x = "maf", y = "density")
+}
+
+# ==============================================================================
+# 7. COMPILATION DU NOUVEAU RAPPORT PDF DISTINCT
+# ==============================================================================
+# LE NOM A BIEN ÉTÉ MODIFIÉ ICI POUR NE PAS ÉCRASER L'ANCIEN
+pdf_output <- "vcf_qc_report_density.pdf"
+pdf(pdf_output, width = 11, height = 8.5)
+
+plot_list <- list(p1, p2, p3, p4, p5)
+valid_plots <- plot_list[!sapply(plot_list, is.null)]
+
+if(length(valid_plots) >= 2) {
+  grid.arrange(valid_plots[[1]], valid_plots[[2]], ncol = 2, top = "VCF QC Report - Page 1 : Site Statistics")
+}
+if(length(valid_plots) >= 4) {
+  grid.arrange(valid_plots[[3]], valid_plots[[4]], ncol = 2, top = "VCF QC Report - Page 2 : Individual Statistics")
+}
+if(length(valid_plots) == 5) {
+  grid.arrange(valid_plots[[5]], ncol = 1, top = "VCF QC Report - Page 3 : Allele Frequency Spectrum")
+}
+
+dev.off()
+
+print(paste("=== Success! All 5 density plots saved in:", pdf_output, "==="))
+```
 #### 3.5.3 Biallelic Snps filtering by QUAL and DP and statistics
 ```bash
-bcftools view -i 'QUAL>=30' all_samples_snp.vcf.gz -Oz -o step1.vcf.gz
-bcftools view -i 'DP>=10' step1.vcf.gz -Oz -o step2.vcf.gz
-bcftools view -i 'DP<=500' step2.vcf.gz -Oz -o all_samples_snp_filtered.vcf.gz
-bcftools stats all_samples_snp_filtered.vcf.gz > all_samples_snps_filtered_stats.txt
+bcftools view -i 'QUAL>=30' bisnps_clean_names.vcf.gz -Oz -o bisnps_clean_qual.vcf.gz
+bcftools view -i 'DP>=10' bisnps_clean_qual.vcf.gz -Oz -o step2.vcf.gz
+bcftools view -i 'DP<=500' step2.vcf.gz -Oz -o bisnps_clean_qual1.vcf.gz
+bcftools view -i 'DP>=50' bisnps_clean_qual.vcf.gz -Oz -o step4.vcf.gz
+bcftools view -i 'DP<=200' step4.vcf.gz -Oz -o bisnps_clean_qual2.vcf.gz
 ```
 ### 3.5.3 PLINK
 ```bash
