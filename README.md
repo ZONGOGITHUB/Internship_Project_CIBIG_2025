@@ -522,7 +522,7 @@ library(tidyverse)
 library(gridExtra)
 
 # Définition du dossier contenant vos outputs VCFTools
-data_dir <- "bisnps_check"
+data_dir <- "/home/saidou/bisnps_check"
 
 print("=== Starting VCF QC Density Visualization ===")
 
