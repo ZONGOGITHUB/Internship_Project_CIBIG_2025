@@ -17,11 +17,11 @@ module load bcftools/1.18
 
 OUTPUT_DIR="/scratch/zongo/CIBIG_Internship_Project/Results/SNP_calling"
 
-RAW_VCF="$OUTPUT_DIR/all_samples.raw.vcf.gz"
+RAW_VCF="$OUTPUT_DIR/rawvcf.vcf.gz"
 
-RAW_SNP_VCF="$OUTPUT_DIR/all_samples_rawsnp.vcf.gz"
+RAW_SNP_VCF="$OUTPUT_DIR/rawsnps.vcf.gz"
 
-RAW_SNP_STATS_FILE="$OUTPUT_DIR/all_samples_rawsnp_stats.txt"
+RAW_SNP_STATS_FILE="$OUTPUT_DIR/rawsnps_stats.txt"
 
 # ===================== FILTER RAW SNPs =====================
 
