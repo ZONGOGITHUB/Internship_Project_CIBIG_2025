@@ -1,20 +1,18 @@
 #!/bin/bash
 
-# Arrêter le script en cas d'erreur
 set -e
 
-# --- Configuration des modules ---
+# --- Modules loading ---
 echo "=== Configuring Cluster Modules ==="
 module purge
 module load bioinfo-wave
 module load vcftools/0.1.16
 
-# --- Définition des variables ---
-# On utilise bien votre VCF renommé et propre !
+# --- Variables ---
+
 INPUT_VCF="bisnps_clean_names.vcf.gz"
 OUTPUT_DIR="bisnps_check"
 
-# Créer le dossier s'il n'existe pas déjà
 mkdir -p "$OUTPUT_DIR"
 
 echo "=== Starting Quality Control Calculations ==="
