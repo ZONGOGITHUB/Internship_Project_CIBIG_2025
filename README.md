@@ -33,7 +33,7 @@ Access link: https://mm.tt/map/3944152256?t=KJA8lJE8Ul
 ## 1. SEQUENCING DATA ACQUISITION
 
 ## 1.1. Connecting to NCBI and EMBL-EBI ENA
-https://www.ncbi.nlm.nih.gov/
+https://www.ncbi.nlm.nih.gov/ and 
 https://www.ebi.ac.uk/ena/browser/home
 
 ## 1.2. Connecting to WAVE cluster and moving to my working directory
